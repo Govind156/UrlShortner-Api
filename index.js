@@ -5,7 +5,7 @@ const path = require('path');
 const connectToMongoDb=require("./connect")
 
 const {urlmodel}=require("./model/urlmodel")
-const {restricttologgedinuseronly,checkauth}=require("./middleware/auth")
+const {checkforAuthentication,restrictTo}=require("./middleware/auth")
 const staticrouter=require("./routes/staticroute")
 const urlroute=require("./routes/urlroute")
 const userroute=require("./routes/userroute");
@@ -20,14 +20,14 @@ connectToMongoDb("mongodb://127.0.0.1:27017/url-shortner")
 //jo incoming bodyies ko parse kar saakaye
 //json data ko parse karlene k liye middleware hai
 app.use(express.json())
-
 //form data ko parse karne k liye middleware
 app.use(express.urlencoded({extended:false}))
 app.use(cookieParser())
 app.set("view engine","ejs")
 app.set("views",path.resolve('./views'))
-app.use("/api/url",restricttologgedinuseronly,urlroute)
-app.use("/",checkauth,staticrouter)
+app.use(checkforAuthentication)
+app.use("/api/url",restrictTo(["normal","admin"]),urlroute)
+app.use("/",staticrouter)
 app.use("/user",userroute)
 
 app.get("/:shortid",async(req,res)=>{
@@ -46,6 +46,18 @@ app.get("/:shortid",async(req,res)=>{
     }                                          
 })
 
+//The issue is that you're not awaiting the result of the database query. urlmodel.find({}) returns a Promise, 
+// so you need to await it before passing the data to the view
+app.get("/api/test",async(req,res)=>{
+    const allurls=await urlmodel.find({})
+    return  res.render('home',{urls:allurls,})
+})
+
+app.listen(PORT,()=>console.log("server connected"))
+
+// app.use("/api/url",restricttologgedinuseronly,urlroute)
+// app.use("/",checkauth,staticrouter)
+
 // app.get("/api/test",async(req,res)=>{
 //     const allurl=await urlmodel.find({})
 //     return res.end(
@@ -61,13 +73,3 @@ app.get("/:shortid",async(req,res)=>{
 //         `
 //     )
 // })
-
-
-//The issue is that you're not awaiting the result of the database query. urlmodel.find({}) returns a Promise, 
-// so you need to await it before passing the data to the view
-app.get("/api/test",async(req,res)=>{
-    const allurls=await urlmodel.find({})
-    return  res.render('home',{urls:allurls,})
-})
-
-app.listen(PORT,()=>console.log("server connected"))

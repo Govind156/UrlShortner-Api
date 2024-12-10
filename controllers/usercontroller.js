@@ -1,7 +1,7 @@
 const { urlmodel } = require("../model/urlmodel");
 const usermodel=require("../model/usermodel")
 //uuid package k andar v4 kuch hote hai uska naam humne uuidv4 rekha diya hai .yah package hum isliye use kar rahe hai taki hum cookies generate kar sake jab b koi user login kare.cookie uuid contain kargi
-const {v4:uuidv4}=require('uuid')
+// const {v4:uuidv4}=require('uuid')
 const {setuser}=require("../authentication")
 
 async function handleUserSignUp(req,res){
@@ -19,13 +19,11 @@ async function handleUserSignUp(req,res){
 }
 
 async function handleUserLogIn(req,res){
-    const {email,password}=req.body;
-    
-    
+    const {email,password}=req.body;  
     if(!email || !password){
         return res.end("both are required")
     }
-    const useruid=uuidv4()
+    // const useruid=uuidv4()
     const user=await usermodel.findOne({email,password})
     
     if(!user){
@@ -33,8 +31,11 @@ async function handleUserLogIn(req,res){
         // return res.render("signup")
         return res.render("login",{error:"invalid username or password"})
     }
-    setuser(useruid,user)
-    res.cookie("uid",useruid)
+    // setuser(useruid,user)
+    // res.cookie("uid",useruid)
+    const token=setuser(user)
+    res.cookie("uid",token)
+    
     return res.redirect("/")
 }
 module.exports={handleUserSignUp,handleUserLogIn}
